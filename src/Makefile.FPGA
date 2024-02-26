@@ -1,0 +1,42 @@
+SHELL := /bin/bash # Use bash syntax
+SEED = 10
+PROJECT = bitstream
+
+TOPCELL = tt_um_template
+PIN_DEF = tt3_asic_sim.pcf
+SOURCES = top.sv
+
+DEVICE = up5k
+PACKAGE = sg48
+
+# target freq for vga panel
+FREQ = 10
+
+all: $(PROJECT).bin
+
+BUILD_DIR = ./
+
+# $@ The file name of the target of the rule.rule
+# $< first pre requisite
+# $^ names of all preerquisites
+
+# rules for building the json
+%.json: $(SOURCES) $(LISTINGS)
+	yosys -l yosys.log -DSYNTH -p 'synth_ice40 -top $(TOPCELL) -json $(PROJECT).json' $(SOURCES)
+
+%.asc: %.json $(ICEBREAKER_PIN_DEF) 
+	nextpnr-ice40 -l nextpnr.log --pcf-allow-unconstrained --seed $(SEED) --freq $(FREQ) --package $(PACKAGE) --$(DEVICE) --asc $@ --pcf $(PIN_DEF) --json $<
+
+# bin, for programming
+$(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.asc
+	icepack $< $@
+
+prog: $(PROJECT).bin
+	iceprog $<
+
+clean:
+	rm -f ${PROJECT}.json ${PROJECT}.asc ${PROJECT}.bin *log $(LISTINGS)
+
+#secondary needed or make will remove useful intermediate files
+.SECONDARY:
+.PHONY: all clean

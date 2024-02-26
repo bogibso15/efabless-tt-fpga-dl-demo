@@ -1,0 +1,43 @@
+# 20 MHz clock
+set_io -nowarn clk        20
+
+
+# USB
+set_io -nowarn usb_dp 21 # IOB_23B
+set_io -nowarn usb_dn 13 # IOB_24A
+set_io -nowarn usb_pu 12 # IOB_22A 
+
+
+# LEDs and Button
+set_io -nowarn boot_btn      9
+
+
+# SPI Flash
+set_io -nowarn FLASH_SCK  15
+set_io -nowarn FLASH_SSB  16
+set_io -nowarn FLASH_IO0  14
+set_io -nowarn FLASH_IO1  17
+
+# pmod buttons
+set_io -nowarn ui_in[0]       44
+set_io -nowarn ui_in[1]       4
+set_io -nowarn ui_in[2]       3
+set_io -nowarn ui_in[3]       48
+set_io -nowarn ui_in[4]       2
+set_io -nowarn ui_in[5]       47
+set_io -nowarn ui_in[6]       46
+set_io -nowarn ui_in[7]       45
+
+
+set_io -nowarn uo_out[7]        32
+set_io -nowarn uo_out[6]        34
+set_io -nowarn uo_out[5]        35
+set_io -nowarn uo_out[4]        36
+set_io -nowarn uo_out[3]        37
+set_io -nowarn uo_out[2]        38
+set_io -nowarn uo_out[1]        42
+set_io -nowarn uo_out[0]        43
+
+set_io -nowarn select[2]        6
+set_io -nowarn select[1]        11
+set_io -nowarn select[0]        10

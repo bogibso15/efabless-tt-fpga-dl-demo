@@ -1,0 +1,52 @@
+name: fpga
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  fpga:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Checkout tt-support-tools repo
+        uses: actions/checkout@v3
+        with:
+          repository: tinytapeout/tt-support-tools
+          path: tt
+          ref: tt05
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install tt-support-tools dependencies
+        shell: bash
+        run: pip install -r tt/requirements.txt
+
+        # install oss fpga tools
+      - name: install oss-cad-suite
+        uses: YosysHQ/setup-oss-cad-suite@v2
+        with:
+          python-override: true
+
+      - name: build the bitstream
+        shell: bash
+        run: |
+          cd src
+          # sed -i '/uio_/d' tt_um_wokwi_*.v
+          make -f Makefile.FPGA
+
+      - name: Upload bitstream artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bitstream
+          path: |
+            src/bitstream.bin
+            src/tt_um_wokwi_*.v
