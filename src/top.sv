@@ -389,7 +389,7 @@ logic FpgaPins_Fpga_CALC_valid_or_reset_a0,
                //m5+cal_viz(@2, /fpga)
             
                // Connect Tiny Tapeout outputs. Note that uio_ outputs are not available in the Tiny-Tapeout-3-based FPGA boards.
-               assign uo_out = 8'b0;
+               //*uo_out = 8'b0;
                
                
             //_\end_source
