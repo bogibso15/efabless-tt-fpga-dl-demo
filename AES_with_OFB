@@ -1,4 +1,4 @@
-\m5_TLV_version 1d --inlineGen --noDirectiveComments --noline --clkAlways --bestsv --debugSigsYosys: tl-x.org
+\m5_TLV_version 1d: tl-x.org
 \m5
    use(m5-1.0)
 
@@ -12,9 +12,9 @@
    //       - tt_um_fpga_hdl_demo for tt_fpga_hdl_demo repo
    //       - tt_um_example for tt06_verilog_template repo
    //   o var(target, FPGA)  // or ASIC (below)
-   set(MAKERCHIP, 0)   /// 1 for simulating in Makerchip.
-   var(my_design, tt_um_example)   /// The name of your top-level TT module, to match your info.yml.
-   var(target, ASIC)  /// FPGA or ASIC
+   set(MAKERCHIP, 1)   /// 1 for simulating in Makerchip.
+   var(my_design, tt_um_template)   /// The name of your top-level TT module, to match your info.yml.
+   var(target, FPGA)  /// FPGA or ASIC
    //-------------------------------------------------------
    
    var(debounce_inputs, 1)         /// 1: Provide synchronization and debouncing on all input signals.
@@ -33,6 +33,354 @@
    m4_include_lib(https:/['']/raw.githubusercontent.com/efabless/chipcraft---mest-course/main/tlv_lib/calculator_shell_lib.tlv)
    // Include Tiny Tapeout Lab.
    m4_include_lib(https:/['']/raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/35e36bd144fddd75495d4cbc01c4fc50ac5bde6f/tlv_lib/tiny_tapeout_lib.tlv)
+
+
+\TLV aes_viz()
+   |encrypt
+      @0
+         \viz_js
+            box: {width: 960, height: 960, strokeWidth: 0},
+            init() {
+               this.row_colors = ["red", "blue", "#00ff00", "#ff00ff"];
+               return {bg: this.newImageFromURL("https://upload.wikimedia.org/wikipedia/commons/5/50/AES_(Rijndael)_Round_Function.png",
+                                                "John Savard - CC0",
+                                                {width: 640, height: 960, fill: "#30483c", strokeWidth: 1,},
+                                                {strokeWidth: 0}
+                                               )}
+            },
+            where: {left: 0, top: 0, height: 100}
+         /subbytes
+            /sub_word[*]
+               \viz_js
+                  box: {strokeWidth: 0},
+                  layout: {left: 43, top: -24},
+                  where: {left: 57, top: 60}
+               /sbox_subword[*]
+                  $word_byte[7:0] = /sub_word$word[32 - 8 * (1 + #sbox_subword) +: 8];
+                  $sb_out_byte[7:0] = /sub_word$sb_out[32 - 8 * (1 + #sbox_subword) +: 8];
+                  $ssr_out_byte[7:0] = /subbytes$ssr_out[(15 - ((#sub_word * 4) + #sbox_subword)) +: 8];
+                  \viz_js
+                     box: {strokeWidth: 0},
+                     layout: {left: 56, top: 32},
+                     init() {
+                        test = this
+                        debugger
+                        circ = new fabric.Circle({
+                            fill: "#FFFD", radius: 25,
+                            strokeWidth: 2, stroke: "black"
+                        })
+                        text = new fabric.Text("--\n--\n--", {originX: "center", originY: "center", textAlign: "center", left: 25, top: 25, fontFamily: "mono", fontSize: 12.5})
+                        return {circ, text}
+                     },
+                     onTraceData() {
+                        this.getObjects().circ.set({stroke: this.getScope("encrypt").context.row_colors[this.getIndex("sbox_subword")]})
+                     },
+                     render() {
+                        if ('|encrypt$valid_blk'.asBool()) {
+                           this.getObjects().text.set({
+                              text: `${'$word_byte'.asInt().toString(16)}\n${'$sb_out_byte'.asInt().toString(16)}\n${'$ssr_out_byte'.asInt().toString(16)}`
+                           })
+                        }
+                        return [];
+                     }
+            /map
+               \viz_js
+                  box: {strokeWidth: 0},
+                  init() {
+                     img = this.newImageFromURL(
+                        "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/AES-SubBytes.svg/1920px-AES-SubBytes.svg.png",
+                        "Matt Crypto -- CC0",
+                        {left: 0, top: 0, width: 300, fill: "#30483c", strokeWidth: 1,},
+                        {strokeWidth: 0}
+                     )
+                     return {img}
+                  },
+                  where: {left: 460, top: 95}
+               /ax[3:0]
+                  /ay[3:0]
+                     $ANY = /subbytes/sub_word[#ax]/sbox_subword[#ay]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$word_byte'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 3, top: 6}
+               /bx[3:0]
+                  /by[3:0]
+                     $ANY = /subbytes/sub_word[#bx]/sbox_subword[#by]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$sb_out_byte'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 191, top: 6}
+         /shift_row
+            /map
+               \viz_js
+                  box: {strokeWidth: 0},
+                  init() {
+                     img = this.newImageFromURL(
+                        "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/AES-ShiftRows.svg/1920px-AES-ShiftRows.svg.png",
+                        "Matt Crypto -- CC0",
+                        {left: -30, top: 4, width: 331, fill: "#30483c", strokeWidth: 1,},
+                        {strokeWidth: 0}
+                     )
+                     return {img}
+                  },
+                  where: {left: 430, top: 285}
+               /ax[3:0]
+                  /ay[3:0]
+                     $ANY = |encrypt/subbytes/sub_word[#ax]/sbox_subword[#ay]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$sb_out_byte'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 3, top: 6}
+               /bx[3:0]
+                  /by[3:0]
+                     $ANY = |encrypt/subbytes/sub_word[#bx]/sbox_subword[#by]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$ssr_out_byte'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 191, top: 6}
+         /mixcolumn
+            /xx[*]
+               \viz_js
+                  box: {strokeWidth: 0},
+                  layout: {left: 43, top: -24},
+                  where: {left: 57, top: 430}
+               /yy[*]
+                  $ssr_out_byte[7:0] = |encrypt/subbytes/sub_word[#xx]/sbox_subword[#yy]$ssr_out_byte;
+                  // $ss, $cc, $oo
+                  \viz_js
+                     box: {strokeWidth: 0},
+                     layout: {left: 56, top: 32},
+                     init() {
+                        circ = new fabric.Circle({
+                            fill: "#FFFD", radius: 25,
+                            strokeWidth: 2, stroke: "black"
+                        })
+                        text = new fabric.Text("--\n--\n--\n--", {originX: "center", originY: "center", textAlign: "center", left: 25, top: 25, fontFamily: "mono", fontSize: 9})
+                        return {circ, text}
+                     },
+                     onTraceData() {
+                        this.getObjects().circ.set({stroke: this.getScope("encrypt").context.row_colors[this.getIndex("yy")]})
+                     },
+                     render() {
+                        if ('|encrypt$valid_blk'.asBool()) {
+                           this.getObjects().text.set({
+                              text: `${'$ssr_out_byte'.asInt().toString(16)}\n${'$ss'.asInt().toString(16)}\n${'$cc'.asInt().toString(16)}\n${'$oo'.asInt().toString(16)}`
+                           })
+                        }
+                        return [];
+                     }
+            /map
+               \viz_js
+                  box: {strokeWidth: 0},
+                  init() {
+                     img = this.newImageFromURL(
+                        "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/AES-MixColumns.svg/1920px-AES-MixColumns.svg.png",
+                        "Matt Crypto -- CC0",
+                        {left: 1, top: -14, width: 300, fill: "#30483c", strokeWidth: 1,},
+                        {strokeWidth: 0}
+                     )
+                     return {img}
+                  },
+                  where: {left: 460, top: 455}
+               /ax[3:0]
+                  /ay[3:0]
+                     $ANY = /mixcolumn/xx[#ax]/yy[#ay]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$ss'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 3, top: 6}
+               /bx[3:0]
+                  /by[3:0]
+                     $ANY = /mixcolumn/xx[#bx]/yy[#by]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$oo'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 191, top: 6}
+         /keyschedule
+            /sbox_k[*]
+               \viz_js
+                  box: {strokeWidth: 0},
+                  layout: {left: 43, top: -24},
+                  where: {left: 57, top: 655}
+               /yy[3:0]
+                  $oo[7:0] = |encrypt/mixcolumn/xx[#sbox_k]/yy[#yy]$oo;
+                  $key_byte[7:0] = |encrypt/keyschedule$key[(15 - ((#sbox_k * 4) + #yy)) +: 8];
+                  $state_ark_byte[7:0] = |encrypt$state_ark[(15 - ((#sbox_k * 4) + #yy)) +: 8];
+                  
+                  \viz_js
+                     box: {strokeWidth: 0},
+                     layout: {left: 56, top: 32},
+                     init() {
+                        circ = new fabric.Circle({
+                            fill: "#FFFD", radius: 25,
+                            strokeWidth: 2, stroke: "black"
+                        })
+                        text = new fabric.Text("--\n--\n--", {originX: "center", originY: "center", textAlign: "center", left: 25, top: 25, fontFamily: "mono", fontSize: 12.5})
+                        return {circ, text}
+                     },
+                     onTraceData() {
+                        this.getObjects().circ.set({stroke: this.getScope("encrypt").context.row_colors[this.getIndex("yy")]})
+                     },
+                     render() {
+                        if ('|encrypt$valid_blk'.asBool()) {
+                           this.getObjects().text.set({
+                              text: `${'$oo'.asInt().toString(16)}\n${'$key_byte'.asInt().toString(16)}\n${'$state_ark_byte'.asInt().toString(16)}`
+                           })
+                        }
+                        return [];
+                     }
+            
+            /map
+               \viz_js
+                  box: {strokeWidth: 0},
+                  init() {
+                     img = this.newImageFromURL(
+                        "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/AES-AddRoundKey.svg/1024px-AES-AddRoundKey.svg.png",
+                        "Matt Crypto -- CC0",
+                        {left: 0, top: 0, width: 300, fill: "#30483c", strokeWidth: 1,},
+                        {strokeWidth: 0}
+                     )
+                     return {img}
+                  },
+                  where: {left: 460, top: 660}
+               /ax[3:0]
+                  /ay[3:0]
+                     $ANY = /keyschedule/sbox_k[#ax]/yy[#ay]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$oo'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 2, top: 1}
+               /bx[3:0]
+                  /by[3:0]
+                     $ANY = /keyschedule/sbox_k[#bx]/yy[#by]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$state_ark_byte'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 190, top: 1}
+               /kx[3:0]
+                  /ky[3:0]
+                     $ANY = /keyschedule/sbox_k[#kx]/yy[#ky]$ANY;
+                     \viz_js
+                        box: {strokeWidth: 0},
+                        layout: "vertical",
+                        init() {
+                           circ = new fabric.Circle({fill: "#FFFD", radius: 13})
+                           text = new fabric.Text("--", {originX: "center", originY: "center", textAlign: "center", left: 13, top: 13, fontFamily: "mono", fontSize: 12.5})
+                           return {circ, text}
+                        },
+                        render() {
+                           if ('|encrypt$valid_blk'.asBool()) {
+                              this.getObjects().text.set({
+                                 text: `${'$key_byte'.asInt().toString(16)}`
+                              })
+                           }
+                           return [];
+                        },
+                        where: {left: 2, top: 125}
 
 //Module to perform the Subbytes AND Shift Rows subroutines.
 //It is trivial to combine these subroutines, and so we combine
@@ -69,9 +417,6 @@
                    /_top$_ui_in == 4 ? (/_top$_state_f == 128'hff4e66c07bae3e79fb7d210847a3b0ba) :
                    /_top$_ui_in == 8 ? (/_top$_state_f == 128'h7b90785125505fad59b13c186dd66ce3) :
                    (/_top$_state_f == 128'h8b527a6aebdaec9eaef8eda2cb7783e5);
-      
-      *uo_out = $pass ? 8'b00111111 :
-                8'b01110110;
 
 //Module to perform the mix columns subroutine. See Section
 //5.1.3 (page 17) of the NIST AES Specification for more details.
@@ -90,12 +435,6 @@
                $three_check[7:0] = /xx[#exp]/yy[#yy]$cc == 8'h03 ? /xx[#xx]/yy[#exp]$ss : 8'h00; //check if a multiplication by 3 is being done
                $op[7:0] = /xx[#exp]/yy[#yy]$cc == 8'h01 ? /xx[#xx]/yy[#exp]$ss : ((/xx[#xx]/yy[#exp]$ss << 1) ^ $three_check ^ $reduce_check); //if 1, identity. otherwise, bitshift & other operations.
             $oo[7:0] = /exp[0]$op ^ /exp[1]$op ^ /exp[2]$op ^ /exp[3]$op; //xor the bytes together
-            \viz_js
-               box: {width: 60, height: 60},
-               layout: "vertical",
-               render() {
-                  return [new fabric.Text('$oo'.asInt().toString(16), {fill: "black"})];
-               }
          $out_matrix[31:0] = {/yy[3]$oo, /yy[2]$oo, /yy[1]$oo, /yy[0]$oo} ; //concat matrix rows
       $block_out[127:0] = {/xx[3]$out_matrix, /xx[2]$out_matrix, /xx[1]$out_matrix, /xx[0]$out_matrix}; //concat matrix columns
 
@@ -206,6 +545,15 @@
             
          ?$valid_check
             m5+check(|encrypt, /check, $state_i, $ui_in)
+         
+         // Capture and drive pass/fail on 7-seg.
+         $passed = $reset       ? 1'b0 :
+                   $valid_check ? /check$pass :
+                                  $RETAIN;
+         *uo_out = $passed ? 8'b00111111 :
+                   8'b01110110;
+
+   m5_if(m5_MAKERCHIP, ['m5+aes_viz()'])
    
    // Connect Tiny Tapeout outputs. Note that uio_ outputs are not available in the Tiny-Tapeout-3-based FPGA boards.
    //*uo_out = 8'b0;
@@ -274,4 +622,3 @@ module m5_user_module_name (
 
 \SV
 endmodule
-
